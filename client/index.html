@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="adapter.js"></script>
+    <script src="socket.io.js"></script>
+    <script src="jquery.js"></script>
+  </head>
+
+  <body>
+    <video id="localVideo" autoplay muted style="width:40%;"></video>
+    <video id="remoteVideo" autoplay style="width:40%;"></video>
+
+    <br />
+
+    <input type="button" id="start" value="Start Video"></input>
+
+    <script src="webrtc.js"></script>
+    <script type="text/javascript">
+        pageReady();
+    </script>
+  </body>
+</html>
