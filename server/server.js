@@ -7,7 +7,7 @@ const koaStatic = require('koa-static');
 const socketIo = require('socket.io');
 
 // HTTPS Configurations
-const HTTPS_PORT = process.env.PORT || 8443;
+const HTTPS_PORT = process.env.PORT || 3030;
 const HTTPS_CONFIG = {
   key: fs.readFileSync('key.pem'),
   cert: fs.readFileSync('cert.pem'),
@@ -29,17 +29,25 @@ const io = socketIo(httpsServer);
 const clients = {};
 let talker = '';
 let lastTalkTime = (new Date()).getTime();
+function getUuidList() {
+  return Object.keys(clients);
+}
 io.on('connection', (socket) => {
   // message, used for WebRTC signaling
   socket.on('message', (message) => {
-    socket.emit('message', message);
     socket.broadcast.emit('message', message);
   });
   // uuid request
-  socket.on('requestUUID', () => {
+  socket.on('requestUuid', () => {
     const uuid = uuidv4();
     clients[uuid] = socket;
-    socket.emit('responseUUID', uuid);
+    socket.emit('responseUuid', uuid);
+    socket.emit('responseTalk', { talker, lastTalkTime });
+    socket.broadcast.emit('responseUuidList', getUuidList());
+  });
+  // uuid list request
+  socket.on('requestUuidList', () => {
+    socket.emit('responseUuidList', getUuidList());
   });
   // talk request
   socket.on('requestTalk', (uuid) => {
@@ -48,7 +56,8 @@ io.on('connection', (socket) => {
       talker = uuid;
       lastTalkTime = currentTime;
     }
-    socket.emit('talk', { talker, lastTalkTime });
+    socket.emit('responseTalk', { talker, lastTalkTime });
+    socket.broadcast.emit('responseTalk', { talker, lastTalkTime });
   });
 });
 

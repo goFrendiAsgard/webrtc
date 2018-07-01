@@ -4,21 +4,33 @@
     <script src="adapter.js"></script>
     <script src="socket.io.js"></script>
     <script src="jquery.js"></script>
+    <style>
+      .div-container{
+        width: 40%;
+        display: inline-block;
+      }
+      video{
+        display: inline-block;
+        width: 40%;
+        border: 1px solid black;
+      }
+    </style>
   </head>
 
   <body>
-    <b>UUID: </b><label id="lbl-uuid"></label> 
-    <br />
-    <b>Taker: </b><label id="lbl-talker"></label>
-    <br />
-    <video id="vid-local" autoplay muted style="width:30%;"></video>
-    <video id="vid-remote" autoplay style="width:30%;"></video>
-    <br />
-    <button id="btn-talk">Talk</button>
-
+    <div class="div-container">
+      <b>UUID: </b><label id="lbl-uuid"></label> 
+    </div>
+    <div class="div-container">
+      <b>Talker: </b><label id="lbl-talker"></label>
+    </div>
+    <div class="div-container">
+      <video id="vid-local" autoplay muted></video>
+    </div>
+    <div id="vid-remote-container" class="div-container"></div>
+    <div class="div-container">
+      <button id="btn-talk">Talk</button>
+    </div>
     <script src="webrtc.js"></script>
-    <script type="text/javascript">
-        pageReady();
-    </script>
   </body>
 </html>

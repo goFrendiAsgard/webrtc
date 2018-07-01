@@ -1,11 +1,12 @@
 /* global $, navigator, io, window, RTCPeerConnection, RTCSessionDescription, RTCIceCandidate */
 
-let localVideo;
+let currentUuid;
+let currentTalker;
 let localStream;
-let remoteVideo;
-let peerConnection;
-let uuid;
-let socket;
+const currentPeerUuidList = [];
+const peerConnections = {};
+const { hostname, port } = window.location;
+const socket = port ? io.connect(`https://${hostname}:${port}`) : io.connect(`https://${hostname}`);
 
 const peerConnectionConfig = {
   iceServers: [
@@ -14,92 +15,109 @@ const peerConnectionConfig = {
   ],
 };
 
-function errorHandler(error) {
-  console.error('something wrong');
-  console.error(error);
+// get local stream
+if (navigator.mediaDevices.getUserMedia) {
+  navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
+    localStream = stream;
+    $('#vid-local')[0].srcObject = localStream;
+    // ask for uuid, after localStream defined
+    socket.emit('requestUuid');
+  }).catch((error) => {
+    console.error(error);
+  });
+} else {
+  console.error('Your browser does not support getUserMedia API');
 }
 
-function createPeerConnectionDescription(description) {
-  peerConnection.setLocalDescription(description).then(() => {
-    socket.emit('message', { sdp: peerConnection.localDescription, uuid });
-  }).catch(errorHandler);
-}
-
-function start(isCaller) {
-  peerConnection = new RTCPeerConnection(peerConnectionConfig);
-  peerConnection.addStream(localStream);
-  peerConnection.onicecandidate = (event) => {
-    if (event.candidate != null) {
-      socket.emit('message', { ice: event.candidate, uuid });
-    }
-  };
-  peerConnection.ontrack = (event) => {
-    const [srcObject] = event.streams;
-    remoteVideo[0].srcObject = srcObject;
-  };
-  if (isCaller) {
-    console.log('jalan');
-    peerConnection.createOffer().then(createPeerConnectionDescription).catch(errorHandler);
-  }
-}
-
-function pageReady() {
-  // initialize socket
-  const { hostname, port } = window.location;
-  socket = port ? io.connect(`https://${hostname}:${port}`) : io.connect(`https://${hostname}`);
-
-  // initialize components
-  localVideo = $('#vid-local');
-  remoteVideo = $('#vid-remote');
-  $('#btn-talk').click(() => {
-    socket.emit('requestTalk');
-    start(true);
+// btn talk clicked, send offer to all peers
+$('#btn-talk').click(() => {
+  currentPeerUuidList.forEach((peerUuid) => {
+    const connection = peerConnections[peerUuid];
+    connection.createOffer().then(description => connection.setLocalDescription(description)).then(
+      () => {
+        socket.emit('message', { sdp: connection.localDescription, uuid: currentUuid });
+      },
+    ).catch((error) => {
+      console.error(error);
+    });
   });
+});
 
-  // initialize local video
-  if (navigator.mediaDevices.getUserMedia) {
-    navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
-      localStream = stream;
-      localVideo[0].srcObject = stream;
-    }).catch(errorHandler);
-  } else {
-    console.error('Your browser does not support getUserMedia API');
-  }
+socket.on('responseUuid', (uuid) => {
+  currentUuid = uuid;
+  $('#lbl-uuid').html(currentUuid);
+  socket.emit('requestUuidList');
+});
 
-  // request UUID from signaling server
-  socket.emit('requestUUID');
+socket.on('responseTalk', (data) => {
+  const { talker } = data;
+  currentTalker = talker;
+  $('#lbl-talker').html(currentTalker);
+});
 
-  // get UUID from signaling server
-  socket.on('responseUUID', (data) => {
-    uuid = data;
-    $('#lbl-uuid').html(uuid);
-  });
-
-  // get Talker from signaling server
-  socket.on('talk', (data) => {
-    const { talker } = data;
-    $('#lbl-talker').html(talker);
-  });
-
-  // Receive Web-RTC signaling
-  socket.on('message', (signal) => {
-    if (!peerConnection) start(false);
-    // Ignore messages from ourself
-    if (!uuid || signal.uuid === uuid) return;
+socket.on('message', (signal) => {
+  const promises = [];
+  currentPeerUuidList.forEach((peerUuid) => {
+    const connection = peerConnections[peerUuid];
     if (signal.sdp) {
-      peerConnection.setRemoteDescription(new RTCSessionDescription(signal.sdp)).then(() => {
-        // Only create answers in response to offers
-        if (signal.sdp.type === 'offer') {
-          peerConnection.createAnswer().then(createPeerConnectionDescription).catch(errorHandler);
-        }
-      }).catch(errorHandler);
+      // answer offer
+      const remoteDescription = new RTCSessionDescription(signal.sdp);
+      let promise = connection.setRemoteDescription(remoteDescription);
+      if (signal.sdp.type === 'offer') {
+        promise = promise.then(() => {
+          const state = connection.signalingState;
+          if (state === 'have-remote-offer' || state === 'have-local-pranswer') {
+            console.log(state);
+            return connection.createAnswer();
+          }
+          return Promise.resolve(null);
+        }).then((answer) => {
+          if (answer === null) {
+            return Promise.resolve(null);
+          }
+          return connection.setLocalDescription(answer);
+        }).then(() => {
+          socket.emit('message', { sdp: connection.localDescription, uuid: currentUuid });
+        });
+      }
+      promises.push(promise);
     } else if (signal.ice) {
-      peerConnection.addIceCandidate(new RTCIceCandidate(signal.ice)).catch(errorHandler);
+      // addIceCandidate
+      const promise = connection.addIceCandidate(new RTCIceCandidate(signal.ice));
+      promises.push(promise);
     }
   });
-}
+  Promise.all(promises).catch((error) => {
+    console.error(error);
+  });
+});
 
-// a trick to keep eslint shut up
-if (typeof module !== 'undefined') {
-  module.exports = pageReady;
-}
+socket.on('responseUuidList', (uuidList) => {
+  uuidList.forEach((peerUuid) => {
+    if (peerUuid === currentUuid) {
+      return false; // no need to make PeerClient for itself
+    }
+    if (currentPeerUuidList.indexOf(peerUuid) === -1) {
+      try {
+        // create DOM component for video container
+        $('#vid-remote-container').append(`<video id="vid-remote-${peerUuid}" autoplay style="width:30%;"></video>`);
+        // create peerConnection instance
+        const connection = new RTCPeerConnection(peerConnectionConfig);
+        connection.ontrack = (event) => {
+          [$(`#vid-remote-${peerUuid}`)[0].srcObject] = event.streams;
+        };
+        connection.onicecandidate = (event) => {
+          if (event.candidate) {
+            socket.emit('message', { ice: event.candidate, uuid: currentUuid });
+          }
+        };
+        connection.addStream(localStream);
+        peerConnections[peerUuid] = connection;
+        currentPeerUuidList.push(peerUuid);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+    return true;
+  });
+});
