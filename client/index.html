@@ -7,12 +7,14 @@
   </head>
 
   <body>
-    <video id="localVideo" autoplay muted style="width:40%;"></video>
-    <video id="remoteVideo" autoplay style="width:40%;"></video>
-
+    <b>UUID: </b><label id="lbl-uuid"></label> 
     <br />
-
-    <input type="button" id="start" value="Start Video"></input>
+    <b>Taker: </b><label id="lbl-talker"></label>
+    <br />
+    <video id="vid-local" autoplay muted style="width:30%;"></video>
+    <video id="vid-remote" autoplay style="width:30%;"></video>
+    <br />
+    <button id="btn-talk">Talk</button>
 
     <script src="webrtc.js"></script>
     <script type="text/javascript">

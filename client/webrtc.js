@@ -14,98 +14,92 @@ const peerConnectionConfig = {
   ],
 };
 
-// Taken from http://stackoverflow.com/a/105074/515584
-function createUUID() {
-  function s4() {
-    return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
-  }
-  return `${s4() + s4()}-${s4()}-${s4()}-${s4()}-${s4()}${s4()}${s4()}`;
-}
-
 function errorHandler(error) {
   console.error('something wrong');
   console.error(error);
 }
 
-function gotIceCandidate(event) {
-  if (event.candidate != null) {
-    socket.emit('message', { ice: event.candidate, uuid });
-  }
-}
-
-function createdDescription(description) {
+function createPeerConnectionDescription(description) {
   peerConnection.setLocalDescription(description).then(() => {
     socket.emit('message', { sdp: peerConnection.localDescription, uuid });
   }).catch(errorHandler);
 }
 
-function gotRemoteStream(event) {
-  const [srcObject] = event.streams;
-  remoteVideo[0].srcObject = srcObject;
-}
-
-function getUserMediaSuccess(stream) {
-  localStream = stream;
-  localVideo[0].srcObject = stream;
-}
-
 function start(isCaller) {
   peerConnection = new RTCPeerConnection(peerConnectionConfig);
-  peerConnection.onicecandidate = gotIceCandidate;
-  peerConnection.ontrack = gotRemoteStream;
   peerConnection.addStream(localStream);
-
+  peerConnection.onicecandidate = (event) => {
+    if (event.candidate != null) {
+      socket.emit('message', { ice: event.candidate, uuid });
+    }
+  };
+  peerConnection.ontrack = (event) => {
+    const [srcObject] = event.streams;
+    remoteVideo[0].srcObject = srcObject;
+  };
   if (isCaller) {
-    peerConnection.createOffer().then(createdDescription).catch(errorHandler);
-  }
-}
-
-function gotMessageFromServer(message) {
-  if (!peerConnection) start(false);
-
-  const signal = message;
-
-  // Ignore messages from ourself
-  if (signal.uuid === uuid) return;
-
-  if (signal.sdp) {
-    peerConnection.setRemoteDescription(new RTCSessionDescription(signal.sdp)).then(() => {
-      // Only create answers in response to offers
-      if (signal.sdp.type === 'offer') {
-        peerConnection.createAnswer().then(createdDescription).catch(errorHandler);
-      }
-    }).catch(errorHandler);
-  } else if (signal.ice) {
-    peerConnection.addIceCandidate(new RTCIceCandidate(signal.ice)).catch(errorHandler);
+    console.log('jalan');
+    peerConnection.createOffer().then(createPeerConnectionDescription).catch(errorHandler);
   }
 }
 
 function pageReady() {
-  uuid = createUUID();
+  // initialize socket
+  const { hostname, port } = window.location;
+  socket = port ? io.connect(`https://${hostname}:${port}`) : io.connect(`https://${hostname}`);
 
-  localVideo = $('#localVideo');
-  remoteVideo = $('#remoteVideo');
-  $('#start').click(() => {
+  // initialize components
+  localVideo = $('#vid-local');
+  remoteVideo = $('#vid-remote');
+  $('#btn-talk').click(() => {
+    socket.emit('requestTalk');
     start(true);
   });
 
-
-  const { hostname, port } = window.location;
-  socket = port ? io.connect(`https://${hostname}:${port}`) : io.connect(`https://${hostname}`);
-  socket.on('message', gotMessageFromServer);
-
-  const constraints = {
-    video: true,
-    audio: true,
-  };
-
+  // initialize local video
   if (navigator.mediaDevices.getUserMedia) {
-    navigator.mediaDevices.getUserMedia(constraints).then(getUserMediaSuccess).catch(errorHandler);
+    navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
+      localStream = stream;
+      localVideo[0].srcObject = stream;
+    }).catch(errorHandler);
   } else {
     console.error('Your browser does not support getUserMedia API');
   }
+
+  // request UUID from signaling server
+  socket.emit('requestUUID');
+
+  // get UUID from signaling server
+  socket.on('responseUUID', (data) => {
+    uuid = data;
+    $('#lbl-uuid').html(uuid);
+  });
+
+  // get Talker from signaling server
+  socket.on('talk', (data) => {
+    const { talker } = data;
+    $('#lbl-talker').html(talker);
+  });
+
+  // Receive Web-RTC signaling
+  socket.on('message', (signal) => {
+    if (!peerConnection) start(false);
+    // Ignore messages from ourself
+    if (!uuid || signal.uuid === uuid) return;
+    if (signal.sdp) {
+      peerConnection.setRemoteDescription(new RTCSessionDescription(signal.sdp)).then(() => {
+        // Only create answers in response to offers
+        if (signal.sdp.type === 'offer') {
+          peerConnection.createAnswer().then(createPeerConnectionDescription).catch(errorHandler);
+        }
+      }).catch(errorHandler);
+    } else if (signal.ice) {
+      peerConnection.addIceCandidate(new RTCIceCandidate(signal.ice)).catch(errorHandler);
+    }
+  });
 }
 
+// a trick to keep eslint shut up
 if (typeof module !== 'undefined') {
   module.exports = pageReady;
 }
