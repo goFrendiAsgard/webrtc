@@ -31,16 +31,7 @@ if (navigator.mediaDevices.getUserMedia) {
 
 // btn talk clicked, send offer to all peers
 $('#btn-talk').click(() => {
-  currentPeerUuidList.forEach((peerUuid) => {
-    const connection = peerConnections[peerUuid];
-    connection.createOffer().then(description => connection.setLocalDescription(description)).then(
-      () => {
-        socket.emit('message', { sdp: connection.localDescription, uuid: currentUuid });
-      },
-    ).catch((error) => {
-      console.error(error);
-    });
-  });
+  console.log('talk clicked');
 });
 
 socket.on('responseUuid', (uuid) => {
@@ -56,6 +47,9 @@ socket.on('responseTalk', (data) => {
 });
 
 socket.on('message', (signal) => {
+  if (signal.to !== currentUuid) {
+    return false;
+  }
   const promises = [];
   currentPeerUuidList.forEach((peerUuid) => {
     const connection = peerConnections[peerUuid];
@@ -77,7 +71,7 @@ socket.on('message', (signal) => {
           }
           return connection.setLocalDescription(answer);
         }).then(() => {
-          socket.emit('message', { sdp: connection.localDescription, uuid: currentUuid });
+          socket.emit('message', { sdp: connection.localDescription, from: currentUuid, to: peerUuid });
         });
       }
       promises.push(promise);
@@ -87,12 +81,13 @@ socket.on('message', (signal) => {
       promises.push(promise);
     }
   });
-  Promise.all(promises).catch((error) => {
+  return Promise.all(promises).catch((error) => {
     console.error(error);
   });
 });
 
-socket.on('responseUuidList', (uuidList) => {
+socket.on('responseUuidList', (data) => {
+  const { uuidList, shouldInitCall } = data;
   uuidList.forEach((peerUuid) => {
     if (peerUuid === currentUuid) {
       return false; // no need to make PeerClient for itself
@@ -108,10 +103,22 @@ socket.on('responseUuidList', (uuidList) => {
         };
         connection.onicecandidate = (event) => {
           if (event.candidate) {
-            socket.emit('message', { ice: event.candidate, uuid: currentUuid });
+            socket.emit('message', { ice: event.candidate, from: currentUuid, to: peerUuid });
           }
         };
         connection.addStream(localStream);
+        // create offer
+        if (shouldInitCall) {
+          connection.createOffer().then((description) => {
+            return connection.setLocalDescription(description);
+          }).then(() => {
+            socket.emit('message', {
+              sdp: connection.localDescription, from: currentUuid, to: peerUuid,
+            });
+          }).catch((error) => {
+            console.error(error);
+          });
+        }
         peerConnections[peerUuid] = connection;
         currentPeerUuidList.push(peerUuid);
       } catch (error) {

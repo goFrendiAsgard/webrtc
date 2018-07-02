@@ -43,11 +43,17 @@ io.on('connection', (socket) => {
     clients[uuid] = socket;
     socket.emit('responseUuid', uuid);
     socket.emit('responseTalk', { talker, lastTalkTime });
-    socket.broadcast.emit('responseUuidList', getUuidList());
+    socket.broadcast.emit('responseUuidList', {
+      uuidList: getUuidList(),
+      shouldInitCall: false,
+    });
   });
   // uuid list request
   socket.on('requestUuidList', () => {
-    socket.emit('responseUuidList', getUuidList());
+    socket.emit('responseUuidList', {
+      uuidList: getUuidList(),
+      shouldInitCall: true,
+    });
   });
   // talk request
   socket.on('requestTalk', (uuid) => {
