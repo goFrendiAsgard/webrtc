@@ -33,7 +33,7 @@ function getUuidList() {
   return Object.keys(clients);
 }
 io.on('connection', (socket) => {
-  // message, used for WebRTC signaling
+  // message handling, used for WebRTC signaling
   socket.on('message', (message) => {
     socket.broadcast.emit('message', message);
   });

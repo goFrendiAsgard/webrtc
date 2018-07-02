@@ -50,39 +50,32 @@ socket.on('message', (signal) => {
   if (signal.to !== currentUuid) {
     return false;
   }
-  const promises = [];
   const peerUuid = signal.from;
   const connection = peerConnections[peerUuid];
   if (signal.sdp) {
-    // answer offer
     const remoteDescription = new RTCSessionDescription(signal.sdp);
     let promise = connection.setRemoteDescription(remoteDescription);
+    // answer offer
     if (signal.sdp.type === 'offer') {
-      promise = promise.then(() => {
-        const state = connection.signalingState;
-        if (state === 'have-remote-offer' || state === 'have-local-pranswer') {
-          console.log(state);
-          return connection.createAnswer();
-        }
-        return Promise.resolve(null);
-      }).then((answer) => {
-        if (answer === null) {
-          return Promise.resolve(null);
-        }
-        return connection.setLocalDescription(answer);
-      }).then(() => {
+      promise = promise.then(
+        () => connection.createAnswer(),
+      ).then(
+        answer => connection.setLocalDescription(answer),
+      ).then(() => {
         socket.emit('message', { sdp: connection.localDescription, from: currentUuid, to: peerUuid });
       });
     }
-    promises.push(promise);
-  } else if (signal.ice) {
-    // addIceCandidate
-    const promise = connection.addIceCandidate(new RTCIceCandidate(signal.ice));
-    promises.push(promise);
+    promise.catch((error) => {
+      console.error(error);
+    });
   }
-  return Promise.all(promises).catch((error) => {
-    console.error(error);
-  });
+  if (signal.ice) {
+    // addIceCandidate
+    connection.addIceCandidate(new RTCIceCandidate(signal.ice)).catch((error) => {
+      console.error(error);
+    });
+  }
+  return true;
 });
 
 socket.on('responseUuidList', (data) => {
@@ -108,9 +101,9 @@ socket.on('responseUuidList', (data) => {
         connection.addStream(localStream);
         // create offer
         if (shouldInitCall) {
-          connection.createOffer().then((description) => {
-            return connection.setLocalDescription(description);
-          }).then(() => {
+          connection.createOffer().then(
+            description => connection.setLocalDescription(description),
+          ).then(() => {
             socket.emit('message', {
               sdp: connection.localDescription, from: currentUuid, to: peerUuid,
             });
