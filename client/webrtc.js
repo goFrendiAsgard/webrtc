@@ -51,36 +51,35 @@ socket.on('message', (signal) => {
     return false;
   }
   const promises = [];
-  currentPeerUuidList.forEach((peerUuid) => {
-    const connection = peerConnections[peerUuid];
-    if (signal.sdp) {
-      // answer offer
-      const remoteDescription = new RTCSessionDescription(signal.sdp);
-      let promise = connection.setRemoteDescription(remoteDescription);
-      if (signal.sdp.type === 'offer') {
-        promise = promise.then(() => {
-          const state = connection.signalingState;
-          if (state === 'have-remote-offer' || state === 'have-local-pranswer') {
-            console.log(state);
-            return connection.createAnswer();
-          }
+  const peerUuid = signal.from;
+  const connection = peerConnections[peerUuid];
+  if (signal.sdp) {
+    // answer offer
+    const remoteDescription = new RTCSessionDescription(signal.sdp);
+    let promise = connection.setRemoteDescription(remoteDescription);
+    if (signal.sdp.type === 'offer') {
+      promise = promise.then(() => {
+        const state = connection.signalingState;
+        if (state === 'have-remote-offer' || state === 'have-local-pranswer') {
+          console.log(state);
+          return connection.createAnswer();
+        }
+        return Promise.resolve(null);
+      }).then((answer) => {
+        if (answer === null) {
           return Promise.resolve(null);
-        }).then((answer) => {
-          if (answer === null) {
-            return Promise.resolve(null);
-          }
-          return connection.setLocalDescription(answer);
-        }).then(() => {
-          socket.emit('message', { sdp: connection.localDescription, from: currentUuid, to: peerUuid });
-        });
-      }
-      promises.push(promise);
-    } else if (signal.ice) {
-      // addIceCandidate
-      const promise = connection.addIceCandidate(new RTCIceCandidate(signal.ice));
-      promises.push(promise);
+        }
+        return connection.setLocalDescription(answer);
+      }).then(() => {
+        socket.emit('message', { sdp: connection.localDescription, from: currentUuid, to: peerUuid });
+      });
     }
-  });
+    promises.push(promise);
+  } else if (signal.ice) {
+    // addIceCandidate
+    const promise = connection.addIceCandidate(new RTCIceCandidate(signal.ice));
+    promises.push(promise);
+  }
   return Promise.all(promises).catch((error) => {
     console.error(error);
   });
