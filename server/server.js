@@ -19,6 +19,7 @@ app.use(koaStatic(path.resolve(path.dirname(__dirname), 'client')));
 app.use(koaStatic(path.resolve(path.dirname(__dirname), 'node_modules', 'socket.io-client', 'dist')));
 app.use(koaStatic(path.resolve(path.dirname(__dirname), 'node_modules', 'jquery', 'dist')));
 app.use(koaStatic(path.resolve(path.dirname(__dirname), 'node_modules', 'webrtc-adapter', 'out')));
+console.log('Serve client on %s', path.resolve(path.dirname(__dirname), 'client'));
 
 // Create HTTPS server, bind it with Koa, and run it
 const httpsServer = https.createServer(HTTPS_CONFIG, app.callback());
