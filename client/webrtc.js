@@ -1,12 +1,14 @@
 /* global $, navigator, io, window, RTCPeerConnection, RTCSessionDescription, RTCIceCandidate */
 
+const peerConnections = {};
+const { hostname, port } = window.location;
+const socket = port ? io.connect(`https://${hostname}:${port}`) : io.connect(`https://${hostname}`);
+
 let currentUuid;
 let currentTalker;
 let localStream;
 let currentPeerUuidList = [];
-const peerConnections = {};
-const { hostname, port } = window.location;
-const socket = port ? io.connect(`https://${hostname}:${port}`) : io.connect(`https://${hostname}`);
+let defaultMuted = false;
 
 const peerConnectionConfig = {
   iceServers: [
@@ -29,9 +31,19 @@ if (navigator.mediaDevices.getUserMedia) {
   console.error('Your browser does not support getUserMedia API');
 }
 
-// btn talk clicked, send offer to all peers
-$('#btn-talk').click(() => {
-  console.log('talk clicked');
+// request to talk
+$('#btn-talk').mousedown(() => {
+  socket.emit('requestTalk', currentUuid);
+});
+
+// request to stop talk
+$('#btn-talk').mouseup(() => {
+  socket.emit('requestStopTalk', currentUuid);
+});
+
+// mute click
+$('#checkbox-default-mute').change(() => {
+  defaultMuted = $('#checkbox-mute').is(':checked');
 });
 
 // leave
@@ -49,6 +61,12 @@ socket.on('responseTalk', (data) => {
   const { talker } = data;
   currentTalker = talker;
   $('#lbl-talker').html(currentTalker);
+  if (currentTalker) {
+    $(`.vid-remote[uuid='${talker}']`).prop('muted', false);
+    $(`.vid-remote[uuid!='${talker}']`).prop('muted', true);
+  } else {
+    $(`.vid-remote[uuid!='${talker}']`).prop('muted', defaultMuted);
+  }
 });
 
 socket.on('message', (signal) => {
@@ -94,6 +112,7 @@ socket.on('responseUuidList', (data) => {
   });
   currentPeerUuidList = currentPeerUuidList.filter(peerUuid => uuidList.indexOf(peerUuid) > -1);
   // create new peers
+  const muted = defaultMuted ? 'muted' : '';
   uuidList.forEach((peerUuid) => {
     if (peerUuid === currentUuid) {
       return false; // no need to make PeerClient for itself
@@ -101,7 +120,9 @@ socket.on('responseUuidList', (data) => {
     if (currentPeerUuidList.indexOf(peerUuid) === -1) {
       try {
         // create DOM component for video container
-        $('#vid-remote-container').append(`<video id="vid-remote-${peerUuid}" autoplay style="width:30%;"></video>`);
+        $('#vid-remote-container').append(
+          `<video id="vid-remote-${peerUuid}" class="vid-remote" uuid="${peerUuid}" ${muted} autoplay style="width:30%;"></video>`,
+        );
         // create peerConnection instance
         const connection = new RTCPeerConnection(peerConnectionConfig);
         connection.ontrack = (event) => {

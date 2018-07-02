@@ -73,6 +73,14 @@ io.on('connection', (socket) => {
     socket.emit('responseTalk', { talker, lastTalkTime });
     socket.broadcast.emit('responseTalk', { talker, lastTalkTime });
   });
+  // stop talk request
+  socket.on('requestStopTalk', (uuid) => {
+    if (talker === uuid) {
+      talker = '';
+      socket.emit('responseTalk', { talker, lastTalkTime });
+      socket.broadcast.emit('responseTalk', { talker, lastTalkTime });
+    }
+  });
 });
 
 console.log(`Server running. Visit https://localhost: ${HTTPS_PORT} in Firefox/Chrome.`);
