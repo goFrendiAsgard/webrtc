@@ -37,7 +37,7 @@ io.on('connection', (socket) => {
   socket.on('message', (message) => {
     socket.broadcast.emit('message', message);
   });
-  // uuid request
+  // uuid request (every client should do this at first)
   socket.on('requestUuid', () => {
     const uuid = uuidv4();
     clients[uuid] = socket;
@@ -48,11 +48,19 @@ io.on('connection', (socket) => {
       shouldInitCall: false,
     });
   });
-  // uuid list request
+  // uuid list request (client will ask uuid list after get uuid)
   socket.on('requestUuidList', () => {
     socket.emit('responseUuidList', {
       uuidList: getUuidList(),
       shouldInitCall: true,
+    });
+  });
+  // disconnect request (client will send this on unload)
+  socket.on('leave', (uuid) => {
+    delete clients[uuid];
+    socket.broadcast.emit('responseUuidList', {
+      uuidList: getUuidList(),
+      shouldInitCall: false,
     });
   });
   // talk request

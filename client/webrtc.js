@@ -3,7 +3,7 @@
 let currentUuid;
 let currentTalker;
 let localStream;
-const currentPeerUuidList = [];
+let currentPeerUuidList = [];
 const peerConnections = {};
 const { hostname, port } = window.location;
 const socket = port ? io.connect(`https://${hostname}:${port}`) : io.connect(`https://${hostname}`);
@@ -33,6 +33,11 @@ if (navigator.mediaDevices.getUserMedia) {
 $('#btn-talk').click(() => {
   console.log('talk clicked');
 });
+
+// leave
+window.onbeforeunload = () => {
+  socket.emit('leave', currentUuid);
+};
 
 socket.on('responseUuid', (uuid) => {
   currentUuid = uuid;
@@ -80,6 +85,15 @@ socket.on('message', (signal) => {
 
 socket.on('responseUuidList', (data) => {
   const { uuidList, shouldInitCall } = data;
+  // remove peers
+  currentPeerUuidList.forEach((peerUuid) => {
+    if (uuidList.indexOf(peerUuid) === -1) {
+      $(`#vid-remote-${peerUuid}`).remove();
+      delete peerConnections[peerUuid];
+    }
+  });
+  currentPeerUuidList = currentPeerUuidList.filter(peerUuid => uuidList.indexOf(peerUuid) > -1);
+  // create new peers
   uuidList.forEach((peerUuid) => {
     if (peerUuid === currentUuid) {
       return false; // no need to make PeerClient for itself
