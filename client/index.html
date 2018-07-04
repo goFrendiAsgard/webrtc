@@ -12,7 +12,10 @@
       video{
         display: inline-block;
         width: 40%;
-        border: 1px solid black;
+        border: 3px solid blue;
+      }
+      video[muted]{
+        border: 3px solid black;
       }
     </style>
   </head>
@@ -29,7 +32,7 @@
     </div>
     <div id="vid-remote-container" class="div-container"></div>
     <div class="div-container">
-      <input id="checkbox-default-mute" type="checkbox" /> Mute by default
+      <input id="checkbox-default-mute" type="checkbox" checked /> Mute by default
       <br />
       <button id="btn-talk">Force to Talk</button>
     </div>

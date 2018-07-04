@@ -8,7 +8,7 @@ let currentUuid;
 let currentTalker;
 let localStream;
 let currentPeerUuidList = [];
-let defaultMuted = false;
+let defaultMuted = $('#checkbox-default-mute').is(':checked');
 
 const peerConnectionConfig = {
   iceServers: [
@@ -32,18 +32,18 @@ if (navigator.mediaDevices.getUserMedia) {
 }
 
 // request to talk
-$('#btn-talk').mousedown(() => {
+$('#btn-talk').on('mousedown touchstart', () => {
   socket.emit('requestTalk', currentUuid);
 });
 
 // request to stop talk
-$('#btn-talk').mouseup(() => {
+$('#btn-talk').on('mouseup touchend', () => {
   socket.emit('requestStopTalk', currentUuid);
 });
 
 // mute click
-$('#checkbox-default-mute').change(() => {
-  defaultMuted = $('#checkbox-mute').is(':checked');
+$('#checkbox-default-mute').on('change', () => {
+  defaultMuted = $('#checkbox-default-mute').is(':checked');
 });
 
 // leave
@@ -62,10 +62,18 @@ socket.on('responseTalk', (data) => {
   currentTalker = talker;
   $('#lbl-talker').html(currentTalker);
   if (currentTalker) {
-    $(`.vid-remote[uuid='${talker}']`).prop('muted', false);
-    $(`.vid-remote[uuid!='${talker}']`).prop('muted', true);
+    // currentTalker not mute
+    $(`.vid-remote[uuid='${currentTalker}']`).prop('muted', false);
+    $(`.vid-remote[uuid='${currentTalker}']`).removeAttr('muted');
+    // others mute
+    $(`.vid-remote[uuid!='${currentTalker}']`).prop('muted', true);
   } else {
-    $(`.vid-remote[uuid!='${talker}']`).prop('muted', defaultMuted);
+    $('.vid-remote').prop('muted', defaultMuted);
+    if (defaultMuted) {
+      $('.vid-remote').attr('muted', true);
+    } else {
+      $('.vid-remote').removeAttr('muted');
+    }
   }
 });
 
