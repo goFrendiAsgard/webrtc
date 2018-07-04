@@ -83,4 +83,4 @@ io.on('connection', (socket) => {
   });
 });
 
-console.log(`Server running. Visit https://localhost: ${HTTPS_PORT} in Firefox/Chrome.`);
+console.log(`Server running. Visit https://localhost:${HTTPS_PORT} in Firefox/Chrome.`);

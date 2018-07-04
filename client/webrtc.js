@@ -37,7 +37,7 @@ $('#btn-talk').on('mousedown touchstart', () => {
 });
 
 // request to stop talk
-$('#btn-talk').on('mouseup touchend', () => {
+$('#btn-talk').on('mouseup touchend touchcancel', () => {
   socket.emit('requestStopTalk', currentUuid);
 });
 
