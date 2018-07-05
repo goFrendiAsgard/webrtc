@@ -26,11 +26,11 @@ Assuming you have `ssh` and `root` access to your VPS, you should first login to
 ```bash
 # Install nodejs
 > curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
-> apt-get install -y nodejs
+> apt-get install -y nodejs git
 
 # copy this repository
 > cd /var/www
-> git clone https://git.github.com
+> git clone https://git.github.com/goFrendiAsgard/webrtc
 
 # install and start pm2
 > npm install -g pm2
