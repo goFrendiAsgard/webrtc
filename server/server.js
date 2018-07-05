@@ -63,6 +63,18 @@ io.on('connection', (socket) => {
       shouldInitCall: false,
     });
   });
+  // on disconnect
+  socket.on('disconnect', () => {
+    Object.keys(clients).forEach((uuid) => {
+      if (clients[uuid] === socket) {
+        delete clients[uuid];
+        socket.broadcast.emit('responseUuidList', {
+          uuidList: getUuidList(),
+          shouldInitCall: false,
+        });
+      }
+    });
+  });
   // talk request
   socket.on('requestTalk', (uuid) => {
     const currentTime = (new Date()).getTime();
