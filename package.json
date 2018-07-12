@@ -21,8 +21,11 @@
   },
   "homepage": "https://github.com/goFrendiAsgard/webrtc#readme",
   "dependencies": {
+    "chiml": "0.0.5",
     "jquery": "^3.3.1",
     "koa": "^2.5.1",
+    "koa-ejs": "^4.1.1",
+    "koa-route": "^3.2.0",
     "koa-static": "^5.0.0",
     "socket.io": "^2.1.1",
     "uuid": "^3.3.2",

@@ -1,0 +1,10 @@
+{
+  "users": {
+    "01": {
+      "username": "admin",
+      "password": "admin",
+      "role": "commander",
+      "banned": "false"
+    }
+  }
+}
