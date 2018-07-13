@@ -34,7 +34,7 @@ Assuming you have `ssh` and `root` access to your VPS, you should first login to
 
 # install and start pm2
 > npm install -g pm2
-> pm2 start webrtc/server/server.js
+> pm2 start webrtc/server/serverStart.js
 > pm2 startup
 
 ```
