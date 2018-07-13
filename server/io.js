@@ -11,6 +11,13 @@ function createIo(app, httpsServer) {
     return Object.keys(clients);
   }
 
+  function disconnect(socket, uuid) {
+    delete clients[uuid];
+    socket.broadcast.emit('responseUuidList', {
+      uuidList: getUuidList(),
+      shouldInitCall: false,
+    });
+  }
   io.on('connection', (socket) => {
     // message handling, used for WebRTC signaling
     socket.on('message', (message) => {
@@ -40,22 +47,20 @@ function createIo(app, httpsServer) {
 
     // disconnect request (client will send this on unload)
     socket.on('leave', (uuid) => {
-      delete clients[uuid];
-      socket.broadcast.emit('responseUuidList', {
-        uuidList: getUuidList(),
-        shouldInitCall: false,
-      });
+      disconnect(socket, uuid);
+    });
+
+    // kick
+    socket.on('kick', (uuid) => {
+      clients[uuid].emit('kicked');
+      disconnect(socket, uuid);
     });
 
     // on disconnect
     socket.on('disconnect', () => {
       Object.keys(clients).forEach((uuid) => {
         if (clients[uuid] === socket) {
-          delete clients[uuid];
-          socket.broadcast.emit('responseUuidList', {
-            uuidList: getUuidList(),
-            shouldInitCall: false,
-          });
+          disconnect(socket, uuid);
         }
       });
     });

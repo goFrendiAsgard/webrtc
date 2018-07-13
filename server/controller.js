@@ -127,7 +127,7 @@ async function userEdit(ctx) {
   const {
     id, username, password, role,
   } = ctx.request.body;
-  const banned = parseInt(ctx.request.body.banned, 10) ? true : false;
+  const banned = parseInt(ctx.request.body.banned, 10);
   let result;
   const oldUser = await getUserById(id);
   if (oldUser.role === 'commander' && banned) {

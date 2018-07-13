@@ -61,6 +61,10 @@ window.onbeforeunload = () => {
   socket.emit('leave', currentUuid);
 };
 
+socket.on('kicked', () => {
+  window.location.href = '/logout';
+});
+
 socket.on('responseUuid', (uuid) => {
   currentUuid = uuid;
   $('#lbl-uuid').html(currentUuid);

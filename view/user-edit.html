@@ -1,5 +1,12 @@
 <% if (result.success) { %>
   <div>Edit Success</div>
+  <script>
+    const { hostname, port } = window.location;
+    const socket = port ? io.connect(`https://${hostname}:${port}`) : io.connect(`https://${hostname}`);
+    if (result.id && result.user.banned) {
+      socket.emit('kick', result.id);
+    }
+  </script>
 <% } else { %>
   <div>Edit Failed</div>
 <% } %>
