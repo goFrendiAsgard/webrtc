@@ -1,0 +1,26 @@
+<table border="1" width="100%">
+  <tr>
+    <th>id</th>
+    <th>username</th>
+    <th>role</th>
+    <th>password</th>
+    <th>banned</th>
+    <th>action</th>
+  </tr>
+  <% for (let id in users) { %>
+    <% let user = users[id] %>
+    <tr>
+      <td><%= id %></td>
+      <td><%= user.username %></td>
+      <td><%= user.role %></td>
+      <td><%= user.password %></td>
+      <td><%= user.banned ? 'banned' : 'active' %></td>
+      <td>
+        <a href="/user-edit/<%= id %>">Edit</a>
+        <% if (user.role != 'commander') { %>
+          <a href="/user-delete/<%= id %>">Delete</a>
+        <% } %>
+      </td>
+    </tr>
+  <% } %>
+</table>

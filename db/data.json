@@ -2,9 +2,9 @@
   "users": {
     "01": {
       "username": "admin",
-      "password": "admin",
+      "password": "admin123",
       "role": "commander",
-      "banned": "false"
+      "banned": false
     }
   }
 }

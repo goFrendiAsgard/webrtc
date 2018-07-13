@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>RTC</title>
+  <script src="/adapter.js"></script>
+  <script src="/socket.io.js"></script>
+  <script src="/jquery.js"></script>
+  <style>
+    .div-container {
+      width: 40%;
+      display: inline-block;
+    }
+
+    video {
+      display: inline-block;
+      width: 40%;
+      border: 3px solid blue;
+    }
+
+    video[muted] {
+      border: 3px solid black;
+    }
+
+    #btn-talk {
+      min-width: 100px;
+      min-height: 100px;
+    }
+  </style>
+</head>
+
+<body>
+  <div>
+    <%- links %>
+  </div>
+  <%- body %>
+</body>
+</html>

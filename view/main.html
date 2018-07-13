@@ -1,45 +1,18 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <script src="adapter.js"></script>
-    <script src="socket.io.js"></script>
-    <script src="jquery.js"></script>
-    <style>
-      .div-container{
-        width: 40%;
-        display: inline-block;
-      }
-      video{
-        display: inline-block;
-        width: 40%;
-        border: 3px solid blue;
-      }
-      video[muted]{
-        border: 3px solid black;
-      }
-      button{
-        min-width:100px;
-        min-height:100px;
-      }
-    </style>
-  </head>
-
-  <body>
-    <div class="div-container">
-      <b>UUID: </b><label id="lbl-uuid"></label> 
-    </div>
-    <div class="div-container">
-      <b>Talker: </b><label id="lbl-talker"></label>
-    </div>
-    <div class="div-container">
-      <video id="vid-local" autoplay muted></video>
-    </div>
-    <div id="vid-remote-container" class="div-container"></div>
-    <div class="div-container">
-      <input id="checkbox-default-mute" type="checkbox" checked /> Mute by default
-      <br />
-      <button id="btn-talk">Force to Talk</button>
-    </div>
-    <script src="webrtc.js"></script>
-  </body>
-</html>
+<div class="div-container">
+  <b>UUID: </b>
+  <label id="lbl-uuid"></label>
+</div>
+<div class="div-container">
+  <b>Talker: </b>
+  <label id="lbl-talker"></label>
+</div>
+<div class="div-container">
+  <video id="vid-local" autoplay muted></video>
+</div>
+<div id="vid-remote-container" class="div-container"></div>
+<div class="div-container">
+  <input id="checkbox-default-mute" type="checkbox" checked /> Mute by default
+  <br />
+  <button id="btn-talk">Force to Talk</button>
+</div>
+<script src="webrtc.js"></script>

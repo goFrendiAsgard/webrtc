@@ -1,0 +1,32 @@
+<form method="post" action="/user-edit">
+
+    <input type="hidden" name="id" value="<%= id %>"/>
+
+    <label>Username</label>
+    <br />
+    <input name="username"  placeholder="Username" value="<%= user.username %>"/>
+    <br />
+
+    <label>Password</label>
+    <br />
+    <input name="password" placeholder="Password" value="<%= user.password %>" />
+    <br />
+
+    <label>Role</label>
+    <br />
+    <select name="role" placeholder="Role">
+        <option value="commander" <%= user.role == 'commander' ? 'selected' : '' %>>Commander</option>
+        <option value="member" <%= user.role != 'commander' ? 'selected' : '' %>>Member</option>
+    </select>
+    <br />
+
+    <label>Banned</label>
+    <br />
+    <select name="banned" placeholder="Banned">
+        <option value="1" <%= user.banned ? 'selected' : '' %>>Banned</option>
+        <option value="0" <%= !user.banned ? 'selected' : '' %>>Active</option>
+    </select>
+    <br />
+
+    <button>Edit</button>
+</form>
