@@ -30,11 +30,13 @@ Assuming you have `ssh` and `root` access to your VPS, you should first login to
 
 # copy this repository
 > cd /var/www
-> git clone https://git.github.com/goFrendiAsgard/webrtc
+> git clone https://git.github.com/goFrendiAsgard/webrtc.git
 
 # install and start pm2
 > npm install -g pm2
-> pm2 start webrtc/server/serverStart.js
+> cd webrtc
+> npm install --save
+> pm2 start server/serverStart.js
 > pm2 startup
 
 ```

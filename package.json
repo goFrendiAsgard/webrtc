@@ -4,7 +4,7 @@
   "description": "An 'as simple as it gets' WebRTC example.",
   "main": "index.js",
   "scripts": {
-    "start": "node server/start.js",
+    "start": "node server/serverStart.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
