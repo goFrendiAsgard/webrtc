@@ -9,6 +9,7 @@ let currentTalker;
 let localStream;
 let currentPeerUuidList = [];
 let defaultMuted = $('#checkbox-default-mute').is(':checked');
+const IS_COMMANDER = $('#isCommander').val() === 'true';
 
 const peerConnectionConfig = {
   iceServers: [
@@ -54,6 +55,12 @@ $('#btn-talk').on('mouseup touchend touchcancel', () => {
 // mute click
 $('#checkbox-default-mute').on('change', () => {
   defaultMuted = $('#checkbox-default-mute').is(':checked');
+});
+
+// kick
+$('body').on('mousedown touchstart', '.btn-kick', function kickHandler() {
+  const uuid = $(this).attr('uuid');
+  socket.emit('kick', uuid);
 });
 
 // leave
@@ -128,7 +135,7 @@ socket.on('responseUuidList', (data) => {
   // remove peers
   currentPeerUuidList.forEach((peerUuid) => {
     if (uuidList.indexOf(peerUuid) === -1) {
-      $(`#vid-remote-${peerUuid}`).remove();
+      $(`#vid-remote-${peerUuid}-container`).remove();
       delete peerConnections[peerUuid];
     }
   });
@@ -141,9 +148,17 @@ socket.on('responseUuidList', (data) => {
     }
     if (currentPeerUuidList.indexOf(peerUuid) === -1) {
       try {
+        let kickButton = '';
+        if (IS_COMMANDER) {
+          kickButton = `<button class="btn-kick" uuid="${peerUuid}">Kick</button>`;
+        }
         // create DOM component for video container
         $('#vid-remote-container').append(
-          `<video id="vid-remote-${peerUuid}" class="vid-remote" uuid="${peerUuid}" ${muted} autoplay style="width:30%;"></video>`,
+          `<div id="vid-remote-${peerUuid}-container">
+            <video id="vid-remote-${peerUuid}" class="vid-remote" uuid="${peerUuid}" ${muted} autoplay></video>
+            <br />
+            ${kickButton}
+          </div>`,
         );
         // create peerConnection instance
         const connection = new RTCPeerConnection(peerConnectionConfig);

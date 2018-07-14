@@ -69,7 +69,8 @@ async function registerForm(ctx) {
 async function register(ctx) {
   const links = getLinks(ctx);
   const { username, password } = ctx.request.body;
-  const user = { username, password };
+  const banned = true;
+  const user = { username, password, banned };
   const result = await addUser(user);
   await ctx.render('register', { result, links });
 }

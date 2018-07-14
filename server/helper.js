@@ -47,8 +47,8 @@ function saveData(data) {
 async function addUser(newUser) {
   const data = await readData();
   const { users } = data;
-  let id = uuidv4();
-  while (id in users) {
+  let id = newUser.username;
+  while (id in users || !id) {
     id = uuidv4();
   }
   users[id] = newUser;

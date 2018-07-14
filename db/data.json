@@ -5,6 +5,12 @@
       "password": "admin123",
       "role": "commander",
       "banned": false
+    },
+    "tono": {
+      "username": "tono",
+      "password": "tono",
+      "banned": 0,
+      "role": "member"
     }
   }
 }

@@ -52,8 +52,12 @@ function createIo(app, httpsServer) {
 
     // kick
     socket.on('kick', (uuid) => {
-      clients[uuid].emit('kicked');
-      disconnect(socket, uuid);
+      const allowToKick = app.contextReference.session.user.role === 'commander';
+      console.log({ uuid, allowToKick });
+      if (allowToKick) {
+        clients[uuid].emit('kicked');
+        disconnect(socket, uuid);
+      }
     });
 
     // on disconnect
