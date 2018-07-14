@@ -40,3 +40,38 @@ Assuming you have `ssh` and `root` access to your VPS, you should first login to
 > pm2 startup
 
 ```
+
+# Experiment to emulate ptt by using arduino uno
+
+Connect pin 12 to push button, connect pin 13 to LED. Pin 12 is acting like PTT button, while LED indicate that other client are currently talking (so you cannot talk). 
+
+```c
+int led = 13;
+int btn = 12;
+char* inputString = "";
+
+void setup() {
+  pinMode(led, OUTPUT);
+  pinMode(btn, INPUT);
+  Serial.begin(9600);  
+}
+
+void loop() {
+  // let client knows that the button is pressed
+  int pressed = digitalRead(btn);
+  if (pressed) {
+    Serial.write("pressed\n");
+  } else {
+    Serial.write("released\n");
+  }
+  // if client request is complete and the command is correct, turn on the lamp
+  if (Serial.available()) {
+    int input = Serial.parseInt();
+    if (input == 1 || input == 0) {
+      digitalWrite(led, input);
+    }
+  }
+  delay(100);
+}
+
+```

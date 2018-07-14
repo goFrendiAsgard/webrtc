@@ -160,6 +160,10 @@ async function main(ctx) {
   await ctx.render('main', { id: userId, user, links });
 }
 
+async function playground(ctx) {
+  await ctx.render('playground', { links: homeLink });
+}
+
 module.exports = {
   debug,
   authentication,
@@ -174,4 +178,5 @@ module.exports = {
   userEdit,
   userDelete,
   main,
+  playground,
 };

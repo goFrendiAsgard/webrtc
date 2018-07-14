@@ -57,6 +57,10 @@ const routes = [
     method: 'all',
     roles: ['commander'],
     url: '/user-delete/:id',
+  }, {
+    controller: controller.playground,
+    method: 'all',
+    url: '/playground',
   },
 ];
 
