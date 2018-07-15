@@ -13,7 +13,7 @@ function createIo(app, httpsServer) {
     try {
       // create a new (fake) Koa context to decrypt the session cookie
       const ctx = app.createContext(socket.request, new http.OutgoingMessage());
-      Object.defineProperty(socket, 'ctx', { value: ctx, witable: false });
+      Object.defineProperty(socket, 'ctx', { value: ctx, writable: false });
     } catch (err) {
       error = err;
       console.error(err);
