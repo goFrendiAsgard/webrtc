@@ -43,12 +43,29 @@ Assuming you have `ssh` and `root` access to your VPS, you should first login to
 
 # Experiment to emulate ptt by using arduino uno
 
+## Download arduino IDE
+
+You can download arduino IDE [here](https://www.arduino.cc/en/Main/Software). The minimum required version is `1.16.1`
+
+## Upgrade to USB 2.1
+
+In your `avr/cores/arduino/USBCore.h`, find the line `#define USB_VERSION 0x200`, change `0x200` into `0x210`. In ubuntu, the file location was in: `arduino-1.8.5/hardware/arduino/avr/cores/arduino`
+
+## Add WebUSB Library
+
+Download or clone [webusb](https://github.com/webusb/arduino) repository, copy `/libraries/WebUsb` from repository into `/libraries` in arduino IDE installation directory. 
+
+## What we are trying to do
+
 Connect pin 12 to push button, connect pin 13 to LED. Pin 12 is acting like PTT button, while LED indicate that other client are currently talking (so you cannot talk). 
 
 ```c
+#include <WebUSB.h>
+#define Serial WebUSBSerial
+WebUSB WebUSBSerial(1, "roiptim.com/playground");
+
 int led = 13;
 int btn = 12;
-char* inputString = "";
 
 void setup() {
   pinMode(led, OUTPUT);
@@ -64,7 +81,7 @@ void loop() {
   } else {
     Serial.write("released\n");
   }
-  // if client request is complete and the command is correct, turn on the lamp
+  // if client request is complete and the command is correct, turn on the lamp. Valid command is either `0` or `1`.
   if (Serial.available()) {
     int input = Serial.parseInt();
     if (input == 1 || input == 0) {
@@ -73,5 +90,4 @@ void loop() {
   }
   delay(100);
 }
-
 ```

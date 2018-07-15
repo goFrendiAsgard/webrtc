@@ -13,17 +13,20 @@ function readLoop() {
 $('#btn-start').click(() => {
   navigator.usb.requestDevice({ filters: [] }).then((selectedDevice) => {
     device = selectedDevice;
+    console.log('attempt to open');
     return device.open();
   }).then(() => {
+    console.log('openned');
     if (device.configuration === null) {
+      console.log('select configuration');
       return device.selectConfiguration(1);
     }
     return null;
   }).then(() => {
-    console.log('interface claimed');
+    console.log('claim interface');
     return device.claimInterface(2);
   }).then(() => {
-    console.log('success again');
+    console.log('success control transfer out');
     return device.controlTransferOut({
       requestType: 'class',
       recipient: 'interface',
@@ -32,6 +35,7 @@ $('#btn-start').click(() => {
       index: 0x02,
     });
   }).then(() => {
+    console.log('read');
     readLoop(); // read
 
   }).catch((error) => {
