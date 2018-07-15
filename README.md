@@ -51,9 +51,14 @@ You can download arduino IDE [here](https://www.arduino.cc/en/Main/Software). Th
 
 In your `avr/cores/arduino/USBCore.h`, find the line `#define USB_VERSION 0x200`, change `0x200` into `0x210`. In ubuntu, the file location was in: `arduino-1.8.5/hardware/arduino/avr/cores/arduino`
 
-## Add WebUSB Library
+## See what's wrong
 
-Download or clone [webusb](https://github.com/webusb/arduino) repository, copy `/libraries/WebUsb` from repository into `/libraries` in arduino IDE installation directory. 
+If you get `Access denied`, `Permission Error` or any other error. Inspect this:
+
+* chrome://device-log
+* lsusb
+* lsusb -v
+* After getting device usb part do this: `chmod 777 /dev/bus/usb/001/007`, where `/dev/bux/usb/001/007` is the device name.
 
 ## What we are trying to do
 
@@ -74,20 +79,20 @@ void setup() {
 }
 
 void loop() {
-  // let client knows that the button is pressed
   int pressed = digitalRead(btn);
   if (pressed) {
-    Serial.write("pressed\n");
+    Serial.write("1"); Serial.flush(); // send `1` to client if the button is pressed
   } else {
-    Serial.write("released\n");
+    Serial.write("0"); Serial.flush(); // send `0` to client if the button is not pressed
   }
   // if client request is complete and the command is correct, turn on the lamp. Valid command is either `0` or `1`.
   if (Serial.available()) {
-    int input = Serial.parseInt();
+    int input = Serial.read();
     if (input == 1 || input == 0) {
       digitalWrite(led, input);
     }
   }
-  delay(100);
+  delay(50);
 }
+
 ```

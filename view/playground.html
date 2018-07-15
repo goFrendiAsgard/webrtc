@@ -1,12 +1,20 @@
 <p>
-  Before starting, please go to:
+  Before starting, please:
 </p>
-<pre>chrome://flags/</pre>
-<p>, and enable:</p>
 <ul>
-  <li>Experimental Web Platform Features</li>
+  <li>You are on google chrome</li>
+  <li>Make sure you have arduino leonardo connected to your computer</li>
+  <li>Make sure pin 12 is connected to push button, and pin 13 is connected to LED</li>
+  <li>Open <code>chrome://flags</code> in other tab, and enable <code>Experimental Web Platform Features</code> (you might need to restart chrome)</li>
+  <li>Open <code>chrome://device-log</code> in other tab</li>
+  <li>Open <code>developer tools</code> (ctl + shift + i)</li>
+  <li>Click start button</li>
+  <li>Choose arduino leonardo</li>
+  <li>If you are using linux, and you got <code>Access dennied error</code>, open terminal and perform <code>chmod 777 /dev/bus/usb/001/007</code>, you can get the device address by looking at <code>device-log</code></li>
+  <li>If you are using windows, good luck :)</li>
 </ul>
-<p>Click start button, and choose: </p>
-<pre>USB Optical Mouse</pre>
+<div id="div-status">No status</div>
 <button id="btn-start">Start</button>
+<button id="btn-on">Hiduplah</button>
+<button id="btn-off">Matilah</button>
 <script src="/playground.js"></script>

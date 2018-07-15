@@ -11,6 +11,18 @@
       "password": "tono",
       "banned": 0,
       "role": "member"
+    },
+    "ginting": {
+      "username": "ginting",
+      "password": "ginting",
+      "banned": 0,
+      "role": "member"
+    },
+    "Adi Shandy": {
+      "username": "Adi Shandy",
+      "password": "adishandy1106",
+      "banned": 0,
+      "role": "member"
     }
   }
 }
