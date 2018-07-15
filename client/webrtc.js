@@ -1,12 +1,17 @@
-/* global $, navigator, io, window, RTCPeerConnection, RTCSessionDescription, RTCIceCandidate */
+/* global $, navigator, io, window, RTCPeerConnection,
+RTCSessionDescription, RTCIceCandidate, TextDecoder */
 
 const peerConnections = {};
 const { hostname, port } = window.location;
 const socket = port ? io.connect(`https://${hostname}:${port}`) : io.connect(`https://${hostname}`);
+const textDecoder = new TextDecoder();
 
+let device;
 let currentUuid;
 let currentTalker;
+let currentLastTalkTime;
 let localStream;
+let mouseIsDown = false;
 let currentPeerUuidList = [];
 let defaultMuted = $('#checkbox-default-mute').is(':checked');
 const IS_COMMANDER = $('#isCommander').val() === 'true';
@@ -28,6 +33,96 @@ const peerConnectionConfig = {
   ],
 };
 
+function sendUsb(command) {
+  if (!device) {
+    return false;
+  }
+  const data = new Uint8Array(1);
+  data[0] = command;
+  device.transferOut(4, data);
+  return true;
+}
+
+function readLoop() {
+  if (!device) {
+    return false;
+  }
+  device.transferIn(5, 64).then((result) => {
+    const data = textDecoder.decode(result.data);
+    if (data === '1') {
+      socket.emit('requestTalk', currentUuid);
+    }
+    readLoop();
+  }, (error) => {
+    console.log(error);
+  });
+  return true;
+}
+
+function initUsb() {
+  navigator.usb.requestDevice({ filters: [] })
+    .then((selectedDevice) => {
+      device = selectedDevice;
+      console.log('device.open()');
+      return device.open();
+    })
+    .then(() => {
+      console.log('check device.configuration');
+      if (device.configuration === null) {
+        console.log('device.selectConfiguration(1)');
+        return device.selectConfiguration(1);
+      }
+      return null;
+    })
+    .then(() => {
+      console.log('device.claimInterface(2)');
+      return device.claimInterface(2);
+    })
+    .then(() => {
+      console.log('device.selectAlternateInterface(2, 0)');
+      return device.selectAlternateInterface(2, 0);
+    })
+    .then(() => {
+      console.log('device.controlTransferOut(options)');
+      return device.controlTransferOut({
+        requestType: 'class',
+        recipient: 'interface',
+        request: 0x22, // CDC_SET_CONTROL_LINE_STATE
+        value: 0x01,
+        index: 0x02,
+      });
+    })
+    .then(() => {
+      console.log('read');
+      readLoop(); // read
+    })
+    .catch((error) => {
+      console.error(error);
+    });
+}
+
+function clearTalkerState() {
+  if (currentLastTalkTime && currentLastTalkTime < (new Date()).getTime() + 1000) {
+    currentTalker = '';
+    $('#lbl-talker').html('');
+    sendUsb(0);
+    $('.vid-remote').prop('muted', defaultMuted);
+    if (defaultMuted) {
+      $('.vid-remote').attr('muted', true);
+    } else {
+      $('.vid-remote').removeAttr('muted');
+    }
+  }
+  setTimeout(clearTalkerState, 500);
+}
+
+function keepTalking() {
+  if (mouseIsDown) {
+    socket.emit('requestTalk', currentUuid);
+    setTimeout(keepTalking, 1);
+  }
+}
+
 // get local stream
 if (navigator.mediaDevices.getUserMedia) {
   navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
@@ -35,6 +130,7 @@ if (navigator.mediaDevices.getUserMedia) {
     $('#vid-local')[0].srcObject = localStream;
     // ask for uuid, after localStream defined
     socket.emit('requestUuid');
+    clearTalkerState();
   }).catch((error) => {
     console.error(error);
   });
@@ -44,11 +140,13 @@ if (navigator.mediaDevices.getUserMedia) {
 
 // request to talk
 $('#btn-talk').on('mousedown touchstart', () => {
-  socket.emit('requestTalk', currentUuid);
+  mouseIsDown = true;
+  keepTalking();
 });
 
 // request to stop talk
 $('#btn-talk').on('mouseup touchend touchcancel', () => {
+  mouseIsDown = false;
   socket.emit('requestStopTalk', currentUuid);
 });
 
@@ -57,9 +155,11 @@ $('#checkbox-default-mute').on('change', () => {
   defaultMuted = $('#checkbox-default-mute').is(':checked');
 });
 
+$('#btn-start-usb').click(initUsb);
+
 // kick
-$('body').on('mousedown touchstart', '.btn-kick', function kickHandler() {
-  const uuid = $(this).attr('uuid');
+$('#vid-remote-container').on('mousedown touchstart', '.btn-kick', (event) => {
+  const uuid = $(event.currentTarget).attr('uuid');
   socket.emit('kick', uuid);
 });
 
@@ -81,6 +181,7 @@ socket.on('responseUuid', (uuid) => {
 socket.on('responseTalk', (data) => {
   const { talker } = data;
   currentTalker = talker;
+  currentLastTalkTime = (new Date()).getTime();
   $('#lbl-talker').html(currentTalker);
   if (currentTalker) {
     // currentTalker not mute
@@ -88,6 +189,9 @@ socket.on('responseTalk', (data) => {
     $(`.vid-remote[uuid='${currentTalker}']`).removeAttr('muted');
     // others mute
     $(`.vid-remote[uuid!='${currentTalker}']`).prop('muted', true);
+    if (currentTalker !== currentUuid) {
+      sendUsb(1); // indicate other client is currently talking
+    }
   } else {
     $('.vid-remote').prop('muted', defaultMuted);
     if (defaultMuted) {

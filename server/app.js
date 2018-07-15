@@ -84,11 +84,6 @@ function createApp(configs = { ejsOption: EJS_OPTION }) {
   // Koa Initialization
   const app = new WebApp();
 
-  app.use(async (ctx, next) => {
-    app.contextReference = ctx;
-    await next();
-  });
-
   // publish static files
   app.use(koaStatic(path.resolve(path.dirname(__dirname), 'client')));
   app.use(koaStatic(path.resolve(path.dirname(__dirname), 'node_modules', 'socket.io-client', 'dist')));
