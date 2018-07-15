@@ -71,6 +71,7 @@ WebUSB WebUSBSerial(1, "roiptim.com/playground");
 
 int led = 13;
 int btn = 12;
+int heartBeat = 0;
 
 void setup() {
   pinMode(led, OUTPUT);
@@ -78,21 +79,21 @@ void setup() {
   Serial.begin(9600);  
 }
 
-void loop() {
-  int pressed = digitalRead(btn);
-  if (pressed) {
-    Serial.write("1"); Serial.flush(); // send `1` to client if the button is pressed
-  } else {
-    Serial.write("0"); Serial.flush(); // send `0` to client if the button is not pressed
-  }
-  // if client request is complete and the command is correct, turn on the lamp. Valid command is either `0` or `1`.
-  if (Serial.available()) {
+void loop() {  
+  if (Serial.available() && heartBeat == 50) {
+    heartBeat = 0;
+    int pressed = digitalRead(btn);
+    if (pressed) {
+      Serial.write("1"); Serial.flush(); // send `1` to client if the button is pressed
+    } else {
+      Serial.write("0"); Serial.flush(); // send `0` to client if the button is not pressed
+    }
+    // if client request is complete and the command is correct, turn on the lamp. Valid command is either `0` or `1`.
     int input = Serial.read();
     if (input == 1 || input == 0) {
       digitalWrite(led, input);
     }
   }
-  delay(50);
+  heartBeat++;
 }
-
 ```
