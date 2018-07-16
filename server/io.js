@@ -8,19 +8,6 @@ function createIo(app, httpsServer) {
   let talker = '';
   let lastTalkTime = (new Date()).getTime();
 
-  io.use((socket, next) => {
-    let error = null;
-    try {
-      // create a new (fake) Koa context to decrypt the session cookie
-      const ctx = app.createContext(socket.request, new http.OutgoingMessage());
-      Object.defineProperty(socket, 'ctx', { value: ctx, writable: false });
-    } catch (err) {
-      error = err;
-      console.error(err);
-    }
-    next(error);
-  });
-
   function getUuidList() {
     return Object.keys(clients);
   }
@@ -41,7 +28,8 @@ function createIo(app, httpsServer) {
     // uuid request (every client should do this at first)
     socket.on('requestUuid', () => {
       // const uuid = uuidv4();
-      const uuid = socket.ctx.session.userId;
+      const ctx = app.createContext(socket.request, new http.OutgoingMessage());
+      const uuid = ctx.session.userId;
       clients[uuid] = socket;
       socket.emit('responseUuid', uuid);
       socket.emit('responseTalk', { talker, lastTalkTime });
@@ -66,7 +54,8 @@ function createIo(app, httpsServer) {
 
     // kick
     socket.on('kick', (uuid) => {
-      const allowToKick = socket.ctx.session.user.role === 'commander';
+      const ctx = app.createContext(socket.request, new http.OutgoingMessage());
+      const allowToKick = ctx.session.user.role === 'commander';
       console.log({ uuid, allowToKick });
       if (allowToKick) {
         clients[uuid].emit('kicked');

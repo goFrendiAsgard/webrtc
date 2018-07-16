@@ -18,9 +18,9 @@
       "banned": 0,
       "role": "member"
     },
-    "Adi Shandy": {
-      "username": "Adi Shandy",
-      "password": "adishandy1106",
+    "adishandy": {
+      "username": "adishandy",
+      "password": "adishandy",
       "banned": 0,
       "role": "member"
     }

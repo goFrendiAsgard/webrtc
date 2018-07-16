@@ -12,6 +12,7 @@ let currentTalker;
 let currentLastTalkTime;
 let localStream;
 let mouseIsDown = false;
+let usbIsDown = false;
 let currentPeerUuidList = [];
 let defaultMuted = $('#checkbox-default-mute').is(':checked');
 const IS_COMMANDER = $('#isCommander').val() === 'true';
@@ -33,6 +34,13 @@ const peerConnectionConfig = {
   ],
 };
 
+function keepTalking() {
+  if (mouseIsDown || usbIsDown) {
+    socket.emit('requestTalk', currentUuid);
+    setTimeout(keepTalking, 1);
+  }
+}
+
 function sendUsb(command) {
   if (!device) {
     return false;
@@ -50,7 +58,10 @@ function readLoop() {
   device.transferIn(5, 64).then((result) => {
     const data = textDecoder.decode(result.data);
     if (data === '1') {
-      socket.emit('requestTalk', currentUuid);
+      usbIsDown = true;
+      keepTalking();
+    } else {
+      usbIsDown = false;
     }
     readLoop();
   }, (error) => {
@@ -102,7 +113,7 @@ function initUsb() {
 }
 
 function clearTalkerState() {
-  if (currentLastTalkTime && currentLastTalkTime < (new Date()).getTime() + 1000) {
+  if (currentLastTalkTime && currentLastTalkTime < (new Date()).getTime() + 2000) {
     currentTalker = '';
     $('#lbl-talker').html('');
     sendUsb(0);
@@ -113,14 +124,7 @@ function clearTalkerState() {
       $('.vid-remote').removeAttr('muted');
     }
   }
-  setTimeout(clearTalkerState, 500);
-}
-
-function keepTalking() {
-  if (mouseIsDown) {
-    socket.emit('requestTalk', currentUuid);
-    setTimeout(keepTalking, 1);
-  }
+  setTimeout(clearTalkerState, 1000);
 }
 
 // get local stream
