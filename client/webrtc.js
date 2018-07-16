@@ -37,8 +37,12 @@ const peerConnectionConfig = {
 function keepTalking() {
   if (mouseIsDown || usbIsDown) {
     socket.emit('requestTalk', currentUuid);
-    setTimeout(keepTalking, 1);
   }
+  /*
+  if (mouseIsDown || usbIsDown) {
+    socket.emit('requestTalk', currentUuid);
+  }
+  */
 }
 
 function sendUsb(command) {
@@ -52,22 +56,11 @@ function sendUsb(command) {
 }
 
 function readLoop() {
-  if (!device) {
-    return false;
-  }
-  device.transferIn(5, 64).then((result) => {
+  return device.transferIn(5, 64).then((result) => {
     const data = textDecoder.decode(result.data);
-    if (data === '1') {
-      usbIsDown = true;
-      keepTalking();
-    } else {
-      usbIsDown = false;
-    }
-    readLoop();
-  }, (error) => {
-    console.log(error);
+    usbIsDown = data === '1';
+    console.log(usbIsDown);
   });
-  return true;
 }
 
 function initUsb() {
@@ -105,7 +98,7 @@ function initUsb() {
     })
     .then(() => {
       console.log('read');
-      readLoop(); // read
+      setInterval(readLoop, 1);
     })
     .catch((error) => {
       console.error(error);
@@ -113,7 +106,7 @@ function initUsb() {
 }
 
 function clearTalkerState() {
-  if (currentLastTalkTime && currentLastTalkTime < (new Date()).getTime() + 2000) {
+  if (currentLastTalkTime && currentLastTalkTime < (new Date()).getTime() - 500) {
     currentTalker = '';
     $('#lbl-talker').html('');
     sendUsb(0);
@@ -124,7 +117,7 @@ function clearTalkerState() {
       $('.vid-remote').removeAttr('muted');
     }
   }
-  setTimeout(clearTalkerState, 1000);
+  setTimeout(clearTalkerState, 100);
 }
 
 // get local stream
@@ -135,6 +128,7 @@ if (navigator.mediaDevices.getUserMedia) {
     // ask for uuid, after localStream defined
     socket.emit('requestUuid');
     clearTalkerState();
+    setInterval(keepTalking, 1);
   }).catch((error) => {
     console.error(error);
   });
@@ -145,7 +139,7 @@ if (navigator.mediaDevices.getUserMedia) {
 // request to talk
 $('#btn-talk').on('mousedown touchstart', () => {
   mouseIsDown = true;
-  keepTalking();
+  // keepTalking();
 });
 
 // request to stop talk

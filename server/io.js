@@ -75,7 +75,7 @@ function createIo(app, httpsServer) {
     // talk request
     socket.on('requestTalk', (uuid) => {
       const currentTime = (new Date()).getTime();
-      if (!talker || currentTime > lastTalkTime + 1000) {
+      if (!talker || talker === uuid || currentTime > lastTalkTime + 500) {
         talker = uuid;
         lastTalkTime = currentTime;
       }
