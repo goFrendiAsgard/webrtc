@@ -38,11 +38,6 @@ function keepTalking() {
   if (mouseIsDown || usbIsDown) {
     socket.emit('requestTalk', currentUuid);
   }
-  /*
-  if (mouseIsDown || usbIsDown) {
-    socket.emit('requestTalk', currentUuid);
-  }
-  */
 }
 
 function sendUsb(command) {
@@ -263,9 +258,11 @@ socket.on('responseUuidList', (data) => {
           </div>`,
         );
         // create peerConnection instance
+        console.time('start-connection');
         const connection = new RTCPeerConnection(peerConnectionConfig);
         connection.ontrack = (event) => {
           [$(`#vid-remote-${peerUuid}`)[0].srcObject] = event.streams;
+          console.timeEnd('start-connection');
         };
         connection.onicecandidate = (event) => {
           if (event.candidate) {
